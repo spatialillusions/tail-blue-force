@@ -114,6 +114,7 @@
 <script type='text/javascript'>
 var socket;
 var app = {};
+app.units = {};
 app.socket = {
 	init : function(){
 		socket = io();
@@ -121,15 +122,17 @@ app.socket = {
 			app.thisUrn = urn;
 		});
 		socket.on('K01.2', function(msg){
-			/*var feature = app.ol.vectorSource.getFeatureById(msg.urn);
-			if(feature){
-				feature.setGeometry(new ol.geom.Point([msg.x,msg.y]));
-			}else{
-				app.ol.addnewfeature(msg);
-			}*/
-			console.log('k01.2');
+			if(!app.units[msg.urn])app.units[msg.urn] = {};
+			app.units[msg.urn].k012 = msg; // remember last msg for this unit
+			var feature = app.ol.vectorSource.getFeatureById(msg.urn);
+			if(feature){ // update style for this feature
+				feature.setProperties(msg);
+				app.ol.setStyle(feature);
+			}
 		});
 		socket.on('K05.1', function(msg){
+			if(!app.units[msg.urn])app.units[msg.urn] = {};
+			app.units[msg.urn].k051 = msg; // remember last msg for this unit
 			var feature = app.ol.vectorSource.getFeatureById(msg.urn);
 			if(feature){
 				feature.setGeometry(new ol.geom.Point([msg.x,msg.y]));
@@ -138,16 +141,31 @@ app.socket = {
 			}
 		});
 		socket.on('disconnected', function(urn){	
-			//console.log(urn +"disconnected");
 			var feature = app.ol.vectorSource.getFeatureById(urn);
 			if(feature){
 				feature.getStyle().getImage().setOpacity(0.3);
 				app.ol.vectorSource.refresh();
 				window.setTimeout(function(){ // Remove the feature after a short delay
 					app.ol.vectorSource.removeFeature(feature);
+					delete app.units[urn]; // Remove this unit from memory
 				}, 5000);
 			}
 		});
+	},
+	k012 : function (msg){
+		var feature = app.ol.vectorSource.getFeatureById(msg.urn);
+		if(feature){
+			feature.setProperties(msg);
+			app.ol.setStyle(feature);
+		}
+		if(!app.units[msg.urn])app.units[msg.urn] = {};
+		app.units[msg.urn].k012 = msg;
+		socket.emit('K01.2', msg);
+	},
+	k051 : function (msg){
+		if(!app.units[msg.urn])app.units[msg.urn] = {};
+		app.units[msg.urn].k051 = msg;
+		socket.emit('K05.1', msg);
 	}
 };
 app.ol = {
@@ -180,12 +198,14 @@ app.ol = {
 		});
 		this.vectorSource.addFeature(feature);
 		feature.setId(msg.urn);
-		this.setStyle(feature,msg.urn);
-		console.log('new added');
-		console.log(this)
+		if(app.units[msg.urn].k012){
+			feature.setProperties(app.units[msg.urn].k012);
+			this.setStyle(feature);
+		}
+		return feature;
 	},
-	positionupdate : function (feature){
-		socket.emit('K05.1', {
+	modifyend : function (feature){
+		app.socket.k051({
 			urn:feature.getId(),
 			x:feature.getGeometry().getCoordinates()[0],
 			y:feature.getGeometry().getCoordinates()[1],
@@ -197,28 +217,28 @@ app.ol = {
 			time:0
 		});
 	},
-	setStyle : function(feature,urn){
-	var ratio = window.devicePixelRatio || 1;
-	var symbol = new MS.symbol(
-		feature.getProperties().SIDC, {
-			colorMode: feature==app.thisUnit?MS.getColorMode("Medium"):MS.getColorMode("Light"),
-			size:40*ratio,
-			uniqueDesignation: feature.getProperties().unitshortname
-		});
-	feature.milsymbol = symbol;
+	setStyle : function(feature){
+		var ratio = window.devicePixelRatio || 1;
+		var symbol = new MS.symbol(
+			feature.getProperties().SIDC, {
+				colorMode: feature==app.thisUnit?MS.getColorMode("Medium"):MS.getColorMode("Light"),
+				size:40*ratio,
+				uniqueDesignation: feature.getProperties().unitshortname
+			});
+		feature.milsymbol = symbol;
 	
-	var canvas = symbol.getMarker().asCanvas();
-	feature.setStyle(new ol.style.Style({
-		image: new ol.style.Icon( ({
-			scale: 1/ratio,
-			anchor: [symbol.markerAnchor.x, symbol.markerAnchor.y],
-			anchorXUnits: 'pixels',
-			anchorYUnits: 'pixels',
-			imgSize: [Math.floor(symbol.width), Math.floor(symbol.height)],
-			img: (canvas)
+		var canvas = symbol.getMarker().asCanvas();
+		feature.setStyle(new ol.style.Style({
+			image: new ol.style.Icon( ({
+				scale: 1/ratio,
+				anchor: [symbol.markerAnchor.x, symbol.markerAnchor.y],
+				anchorXUnits: 'pixels',
+				anchorYUnits: 'pixels',
+				imgSize: [Math.floor(symbol.width), Math.floor(symbol.height)],
+				img: (canvas)
+			}))
 		}))
-	}))
-}
+	}
 };
 app.ui = {
 	connect : function(){
@@ -233,14 +253,15 @@ app.ui = {
 			document.getElementById('unitcontrol').addEventListener("transitionend", function(){
 				document.getElementById('unitcontrol').style.display = (document.getElementById('unitcontrol').style.display != 'block')?'none':'block';
 			}, false);
+			
+			
 			app.thisUnit = new ol.Feature({
 				geometry: new ol.geom.Point([Math.random()*10000000, Math.random()*5000000]),
-				unitshortname: unitname,
-				SIDC: '10031200'+leader+mainicon+modifier1+modifier2
 			});	
 			app.ol.vectorSource.addFeature(app.thisUnit);
 			app.thisUnit.setId(app.thisUrn);
-			app.ol.setStyle(app.thisUnit,app.thisUrn)
+			
+			//app.ol.setStyle(app.thisUnit)
 			
 			var select = new ol.interaction.Select({
 				features: new ol.Collection([app.thisUnit])
@@ -253,10 +274,16 @@ app.ui = {
 				pixelTolerance: 20
 			});
 			modify.on('modifyend', function(e){
-				app.ol.positionupdate(e.features.getArray()[0]);
+				app.ol.modifyend(e.features.getArray()[0]);
 			});		
 			app.ol.map.addInteraction(modify);
-			app.ol.positionupdate(app.thisUnit);
+			app.ol.modifyend(app.thisUnit);
+
+			app.socket.k012({
+				urn : app.thisUrn,
+				unitshortname : unitname,
+				SIDC : '10031200'+leader+mainicon+modifier1+modifier2
+			});
 		}
 	},
 	init : function(){
