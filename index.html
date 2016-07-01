@@ -1,0 +1,411 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title>Tail Blue Force - Spatial Illusions</title>
+		<link rel="stylesheet" type="text/css" href="openlayers/ol.css">
+		<script type='text/javascript' src="openlayers/ol.js"></script>
+		<script type='text/javascript' src="socket/socket.io.js"></script>
+		<!-- TODO change this when milsymbol is released -->
+		<script type='text/javascript' src="http://spatialillusions.com/milsymbol/dist/milsymbol.js"></script>
+		
+<style type='text/css'>
+    html, body, #map {
+    	position: fixed;
+		margin:	0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		font-family: arial, sans-serif;
+	}
+    #unitcontrol {
+    	position: fixed;
+    	top:0;
+    	left:0;
+		margin:	0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0,0, 0,0.85);
+		
+		color: rgba(255,255, 255,0.8);
+		font-size: 20px;
+	}
+	#unitcontrol.inactive{
+		opacity: 0;
+		transition: all 0.5s ease-in-out;
+	}
+	#unitcontrol input{
+		background-color: rgba(0,0, 0,0.2);
+		
+		color: rgba(255,255, 255,0.8);
+		font-size: 20px;
+		
+		border-color: rgba(255,255, 255,0.8);
+		border-radius: 5px;
+		border-style: solid;
+		border-width: 2px;
+		padding: 5px;
+	}
+	.unitselection{
+		position: relative;
+		overflow-y: scroll;
+		margin-top: 6px;
+		margin-bottom: 0px;
+		white-space: nowrap;
+	}
+	.unit{
+		margin: 2px;
+		background-color: rgba(255,255, 255,0.2);
+		border-radius: 5px;
+		padding: 5px;
+		display: inline-block;
+		vertical-align: middle;
+		border-style: solid;
+		border-width: 2px;
+		border-color: rgba(255,255, 255,0.0);
+	}
+	.unit.active{
+		border-color: rgba(255,255, 255,0.8);	
+	}
+	#logo{
+		position: fixed;
+		bottom: 0px;
+		left:2px;
+    	padding: 5px;
+    	font-size: 15px;
+    	color: rgba(255,255, 255,0.8);
+    	padding: 5px;
+    	text-shadow: 0px 0px 10px rgba(0,0,0,0.50);
+	}
+	#right-buttons{
+		position: fixed;
+		top: 0px;
+		right:2px;
+	}
+	.button{
+		min-width: 35px;
+		min-height: 35px;
+		margin-top: 5px;
+		margin-right: 5px;
+		background-color: rgba(0,0, 0,0.7); 
+		border-color: rgba(255,255, 255,0.8);
+		border-radius: 10px;
+		border-style: solid;
+		border-width: 2px;
+		padding: 10px;
+		color: rgba(255,255, 255,0.8);
+		box-shadow: 0px 0px 10px rgba(0,0,0,0.50);
+		text-align: center;
+		vertical-align: middle;
+	}
+	#classification{
+		font-size: 15px;
+		position: fixed;
+		bottom: 0px;
+		right:2px;
+    	color: rgba(255,255, 255,0.8);
+    	padding: 5px;
+    	text-shadow: 0px 0px 10px rgba(0,0,0,0.50);
+    	pointer-events: none;
+	}
+</style>
+
+<script type='text/javascript'>
+var socket;
+var app = {};
+app.socket = {
+	init : function(){
+		socket = io();
+		socket.on('connected', function(urn){
+			app.thisUrn = urn;
+		});
+		socket.on('K01.2', function(msg){
+			/*var feature = app.ol.vectorSource.getFeatureById(msg.urn);
+			if(feature){
+				feature.setGeometry(new ol.geom.Point([msg.x,msg.y]));
+			}else{
+				app.ol.addnewfeature(msg);
+			}*/
+			console.log('k01.2');
+		});
+		socket.on('K05.1', function(msg){
+			var feature = app.ol.vectorSource.getFeatureById(msg.urn);
+			if(feature){
+				feature.setGeometry(new ol.geom.Point([msg.x,msg.y]));
+			}else{
+				app.ol.addnewfeature(msg);
+			}
+		});
+		socket.on('disconnected', function(urn){	
+			//console.log(urn +"disconnected");
+			var feature = app.ol.vectorSource.getFeatureById(urn);
+			if(feature){
+				feature.getStyle().getImage().setOpacity(0.3);
+				app.ol.vectorSource.refresh();
+				window.setTimeout(function(){ // Remove the feature after a short delay
+					app.ol.vectorSource.removeFeature(feature);
+				}, 5000);
+			}
+		});
+	}
+};
+app.ol = {
+	init : function(){
+		this.vectorSource = new ol.source.Vector();
+		this.vectorLayer = new ol.layer.Vector({
+			source: this.vectorSource
+		})
+		this.map = new ol.Map({
+			controls: ol.control.defaults({attribution:false, zoom:false}),
+			layers: [
+				new ol.layer.Tile({
+					source: new ol.source.XYZ({
+						tileSize: [512, 512],
+						url: 'https://api.mapbox.com/styles/v1/mapbox/light-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoic3BhdGlhbGlsbHVzaW9uIiwiYSI6ImNpZ3dhcDdzODAwN2tybGx5YzhlMHd4MTEifQ.5ampQHL0hfBPGyfyIqkvrg'
+					})
+				}),
+				this.vectorLayer
+			],
+			target: 'map',
+				view: new ol.View({
+				center: [0, 0],
+				zoom: 2
+			})
+		});
+	},
+	addnewfeature : function(msg){
+		var feature = new ol.Feature({
+			geometry: new ol.geom.Point([msg.x,msg.y])
+		});
+		this.vectorSource.addFeature(feature);
+		feature.setId(msg.urn);
+		this.setStyle(feature,msg.urn);
+		console.log('new added');
+		console.log(this)
+	},
+	positionupdate : function (feature){
+		socket.emit('K05.1', {
+			urn:feature.getId(),
+			x:feature.getGeometry().getCoordinates()[0],
+			y:feature.getGeometry().getCoordinates()[1],
+			locderv:0,
+			locquality:0,
+			course:0,
+			speed:0,
+			elevation:0,
+			time:0
+		});
+	},
+	setStyle : function(feature,urn){
+	var ratio = window.devicePixelRatio || 1;
+	var symbol = new MS.symbol(
+		feature.getProperties().SIDC, {
+			colorMode: feature==app.thisUnit?MS.getColorMode("Medium"):MS.getColorMode("Light"),
+			size:40*ratio,
+			uniqueDesignation: feature.getProperties().unitshortname
+		});
+	feature.milsymbol = symbol;
+	
+	var canvas = symbol.getMarker().asCanvas();
+	feature.setStyle(new ol.style.Style({
+		image: new ol.style.Icon( ({
+			scale: 1/ratio,
+			anchor: [symbol.markerAnchor.x, symbol.markerAnchor.y],
+			anchorXUnits: 'pixels',
+			anchorYUnits: 'pixels',
+			imgSize: [Math.floor(symbol.width), Math.floor(symbol.height)],
+			img: (canvas)
+		}))
+	}))
+}
+};
+app.ui = {
+	connect : function(){
+		var unitname = document.getElementById('unitname').value;
+		if(unitname){
+			var leader = document.getElementById('leader').getElementsByClassName('active').item(0).id.split('-')[1];
+			var mainicon = document.getElementById('mainicon').getElementsByClassName('active').item(0).id.split('-')[1];
+			var modifier1 = document.getElementById('modifier1').getElementsByClassName('active').item(0).id.split('-')[1];
+			var modifier2 = document.getElementById('modifier2').getElementsByClassName('active').item(0).id.split('-')[1];
+		
+			document.getElementById('unitcontrol').classList.add('inactive');
+			document.getElementById('unitcontrol').addEventListener("transitionend", function(){
+				document.getElementById('unitcontrol').style.display = (document.getElementById('unitcontrol').style.display != 'block')?'none':'block';
+			}, false);
+			app.thisUnit = new ol.Feature({
+				geometry: new ol.geom.Point([Math.random()*10000000, Math.random()*5000000]),
+				unitshortname: unitname,
+				SIDC: '10031200'+leader+mainicon+modifier1+modifier2
+			});	
+			app.ol.vectorSource.addFeature(app.thisUnit);
+			app.thisUnit.setId(app.thisUrn);
+			app.ol.setStyle(app.thisUnit,app.thisUrn)
+			
+			var select = new ol.interaction.Select({
+				features: new ol.Collection([app.thisUnit])
+			});
+			app.ol.map.addInteraction(select);
+			
+			var modify = new ol.interaction.Modify({
+				features: new ol.Collection([app.thisUnit]),
+				style: new ol.style.Style(),
+				pixelTolerance: 20
+			});
+			modify.on('modifyend', function(e){
+				app.ol.positionupdate(e.features.getArray()[0]);
+			});		
+			app.ol.map.addInteraction(modify);
+			app.ol.positionupdate(app.thisUnit);
+		}
+	},
+	init : function(){
+		var type,element,content,key;
+		
+		type = 'mainicon'
+		element = document.getElementById(type);
+		content = '';
+		for (key in this.symbols[type]){
+			var sym = new MS.symbol("1003120000" + key, {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+key+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + key + '\')">' + sym + '</span>';
+		}
+		element.innerHTML += content;
+		element.firstElementChild.classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
+
+		type = 'modifier1'
+		element = document.getElementById(type);
+		content = '';
+		key = 0;
+		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
+			var sym = new MS.symbol("1003120000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
+			key++;
+		}
+		element.innerHTML += content;
+		element.firstElementChild.classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
+
+		type = 'modifier2'
+		element = document.getElementById(type);
+		content = '';
+		key = 0;
+		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
+			var sym = new MS.symbol("100312000000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
+			key++;
+		}
+		element.innerHTML += content;
+		element.firstElementChild.classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
+
+	},
+	daynight : function(){},
+	symbols : {
+		leader : {'00':'Soldier','71':'Leader','72':'Deputy Leader'},
+		mainicon : {'110101':'Infantry','110102':'Medical','110103':'Reconnaissance','110104 ':'Signal','110201':'Explosive Ordnance Disposal','110202':'Field Artillery Observer','110203':'Joint Fire Support','110204':'Liaison','110205':'Messenger','110206':'Military Police','110207':'Observer','110208':'Security','110209':'Sniper','110210':'Special Operation Forces','110301':'Rifle','110305':'Single Shot Rifle','110309':'Semiautomatic Rifle','110313':'Automatic Rifle','110317':'Machine Gun','110321':'Light Machine Gun','110325':'Medium Machine Gun','110329':'Heavy Machine Gun','110333':'Grenade Launcher','110337':'Light Grenade Launcher','110341':'Medium Grenade Launcher','110345':'Heavy Grenade Launcher','110349':'Flame Thrower','110353':'Mortar','110357':'Single Rocket Launcher','110361':'Antitank Rocket Launcher','110401':'Non-Lethal Weapon','110405':'Non-Lethal Grenade Launcher','110409':'Taser'},
+		modifier1 : {'00':'Unspecified','01':'Battalion','02':'Brigade','03':'Company','04':'Close Protection','05':'Crowd and Riot Control','06':'Deputy','07':'Division','08':'Explosive Ordnance Disposal','09':'Functional Staff Area J1','10':'Functional Staff Area J2','11':'Functional Staff Area J3','12':'Functional Staff Area J4','13':'Functional Staff Area J5','14':'Functional Staff Area J6','15':'Functional Staff Area J7','16':'Functional Staff Area J8','17':'Functional Staff Area J9','18':'Governmental Organization Member','19':'Leader or Leadership','20':'Multinational','21':'Multinational Specialized Unit','22':'Nongovernmental Organization Member','23':'Platoon/Detachment','24':'Rank Code OF-1','25':'Rank Code OF-2','26':'Rank Code OF-3','27':'Rank Code OF-4','28':'Rank Code OF-5','29':'Rank Code OF-6','30':'Rank Code OF-7','31':'Rank Code OF-8','32':'Rank Code OF-9','33':'Rank Code OF-10','34':'Rank Code OF-D','35':'Rank Code OR-1','36':'Rank Code OR-2','37':'Rank Code OR-3','38':'Rank Code OR-4','39':'Rank Code OR-5','40':'Rank Code OR-6','41':'Rank Code OR-7','42':'Rank Code OR-8','43':'Rank Code OR-9','44':'Rank Code WO-1','45':'Rank Code WO-2','46':'Rank Code WO-3','47':'Rank Code WO-4','48':'Rank Code WO-5','49':'Regiment/Group','50':'Section','51':'Security','52':'Sniper','53':'Special Weapons and Tactics','54':'Squad','55':'Team/Crew','56':'Video Imagery (Combat Camera)'},
+		modifier2 : {'00':'Unspecified','01':'Airborne','02':'Bicycle Equipped','03':'Demolition','04':'Functional Staff Area J1','05':'Functional Staff Area J2','06':'Functional Staff Area J3','07':'Functional Staff Area J4','08':'Functional Staff Area J5','09':'Functional Staff Area J6','10':'Functional Staff Area J7','11':'Functional Staff Area J8','12':'Functional Staff Area J9','13':'Mountain','14':'Rank Code OF-1','15':'Rank Code OF-2','16':'Rank Code OF-3','17':'Rank Code OF-4','18':'Rank Code OF-5','19':'Rank Code OF-6','20':'Rank Code OF-7','21':'Rank Code OF-8','22':'Rank Code OF-9','23':'Rank Code OF-10','24':'Rank Code OF-D','25':'Rank Code OR-1','26':'Rank Code OR-2','27':'Rank Code OR-3','28':'Rank Code OR-4','29':'Rank Code OR-5','30':'Rank Code OR-6','31':'Rank Code OR-7','32':'Rank Code OR-8','33':'Rank Code OR-9','34':'Rank Code WO-1','35':'Rank Code WO-2','36':'Rank Code WO-3','37':'Rank Code WO-4','38':'Rank Code WO-5','39':'Ski'}
+	},
+	unitselection : function(type, id){
+		document.getElementById(type).getElementsByClassName('active').item(0).classList.remove('active');
+		document.getElementById(type+'-'+id).classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][id];
+	}
+};
+
+window.onload=function(){
+	app.socket.init(); //This sets up the socket functionallity
+	app.ui.init(); 	// This will initiate the connect ui with symbols
+	app.ol.init(); // This will initiate the map
+}
+
+</script>
+	</head>
+	<body>
+		<div id="map"></div>
+		<div id="classification">UNCLASSIFIED</div>
+		<div id="right-buttons">
+			<div class="button">BTN</div>
+			<div class="button">BTN</div>
+			<div class="button">BTN</div>
+			<div class="button">BTN</div>
+			<div class="button">BTN</div>
+		</div>
+<!--		
+		<div id="logo">
+			<a href="http://spatialillusions.com">
+				<svg xmlns="http://www.w3.org/2000/svg"
+					style="position: relative; top:0px;"
+					viewBox="0 0 100 100"
+					width="20"
+					height="20"
+					version="1.1">
+					<path d="M 44.9271,3.62491e-5 21.1298,9.14814 18.7335,24.7768 Z" fill="hsla(195,100%,75.59103753900463%,1)"/>
+					<path d="M 44.9271,3.62491e-5 18.7335,24.7768 41.6868,10.7004 Z" fill="hsla(195,100%,89.90692689064394%,1)"/>
+					<path d="M 44.9271,3.62491e-5 41.6868,10.7004 72.1006,10.5649 Z" fill="hsla(195,100%,68.72901494797502%,1)"/>
+					<path d="M 44.9271,3.62491e-5 72.1006,10.5649 71.2566,5.63664 Z" fill="hsla(195,100%,69.08477327493972%,1)"/>
+					<path d="m 71.2566,5.63664 0.844,4.92826 4.928,-0.84396 z" 		fill="hsla(195,100%,57.50493410011285%,1)"/>
+					<path d="M 3.94869,27.3087 18.7335,24.7768 21.1298,9.14814 Z" 	fill="hsla(195,100%,88.8218395036735%,1)"/>
+					<path d="M 41.6868,10.7004 18.7335,24.7768 54.9196,28.7255 Z" 	fill="hsla(195,100%,67.17744508026871%,1)"/>
+					<path d="M 41.6868,10.7004 54.9196,28.7255 72.1006,10.5649 Z" 	fill="hsla(195,100%,61.034499745632964%,1)"/>
+					<path d="m 72.1006,10.5649 -17.181,18.1606 32.101,9.721 z" 		fill="hsla(195,100%,44.547831090908474%,1)"/>
+					<path d="m 72.1006,10.5649 14.92,27.8816 -9.992,-28.72556 z" 	fill="hsla(195,100%,41.0153881060193%,1)"/>
+					<path d="m 77.0286,9.72094 9.992,28.72556 9.857,-1.688 z" 		fill="hsla(195,100%,38.74416920886859%,1)"/>
+					<path d="M 3.94869,27.3087 -7.39094e-6,63.4945 9.85649,61.8065 Z" fill="hsla(195,100%,78.47348273674724%,1)"/>
+					<path d="M 3.94869,27.3087 9.85649,61.8065 18.7335,24.7768 Z" 	fill="hsla(195,100%,76.40272123737122%,1)"/>
+					<path d="M 18.7335,24.7768 9.85649,61.8065 27.1732,74.0595 Z" 	fill="hsla(195,100%,57.78034982216255%,1)"/>
+					<path d="m 18.7335,24.7768 8.4397,49.2827 8.877,-37.0298 z" 	fill="hsla(195,100%,65.54850852490478%,1)"/>
+					<path d="M 18.7335,24.7768 36.0502,37.0297 54.9196,28.7255 Z" 	fill="hsla(195,100%,71.5658077344167%,1)"/>
+					<path d="m 54.9196,28.7255 -18.8694,8.3042 31.2574,4.7927 z" 	fill="hsla(195,100%,44.92178638069766%,1)"/>
+					<path d="m 54.9196,28.7255 12.388,13.0969 19.713,-3.3759 z"		fill="hsla(195,100%,45.31754712183882%,1)"/>
+					<path d="m 67.3076,41.8224 -40.1344,32.2371 31.2574,4.793 z" 	fill="hsla(195,100%,40.579325222815875%,1)"/>
+					<path d="M 36.0502,37.0297 27.1732,74.0595 67.3076,41.8224 Z" 	fill="hsla(195,100%,36.36687355873937%,1)"/>
+					<path d="m 67.3076,41.8224 15.764,32.8101 3.949,-36.186 z" 		fill="hsla(195,100%,20.05598994751125%,1)"/>
+					<path d="m 67.3076,41.8224 -8.877,37.0301 24.641,-4.22 z" 		fill="hsla(195,100%,21.17407153677761%,1)"/>
+					<path d="m 96.8776,36.7585 -13.806,37.874 9.857,-1.688 z" 		fill="hsla(195,100%,15.761337005571113%,1)"/>
+					<path d="m 87.0206,38.4465 -3.949,36.186 13.806,-37.874 z" 		fill="hsla(195,100%,12.546148232221482%,1)"/>
+					<path d="M 9.85649,61.8065 -7.39094e-6,63.4945 27.1732,74.0595 Z" fill="hsla(195,100%,47.53528676082763%,1)"/>
+					<path d="M -7.39094e-6,63.4945 14.0764,86.4475 27.1732,74.0595 Z" fill="hsla(195,100%,55.21062526308533%,1)"/>
+					<path d="m 27.1732,74.0595 -13.0968,12.388 20.557,1.553 z" 		fill="hsla(195,100%,41.93925526435217%,1)"/>
+					<path d="m 27.1732,74.0595 7.4602,13.941 23.7972,-9.148 z" 		fill="hsla(195,100%,30.0670827227849%,1)"/>
+					<path d="m 14.0764,86.4475 22.2449,11.409 9.8565,-1.688 z" 		fill="hsla(195,100%,37.21455567286587%,1)"/>
+					<path d="m 14.0764,86.4475 32.1014,9.721 -11.5444,-8.168 z" 	fill="hsla(195,100%,29.551144270824192%,1)"/>
+					<path d="m 34.6334,88.0005 11.5444,8.168 12.2528,-17.316 z" 	fill="hsla(195,100%,21.311231630596478%,1)"/>
+					<path d="m 36.3213,97.8565 20.5573,1.553 -10.7008,-3.241 z" 	fill="hsla(195,100%,16.352131957979736%,1)"/>
+					<path d="m 46.1778,96.1685 10.7008,3.241 18.869,-8.305 z" 		fill="hsla(195,100%,12.582020674918843%,1)"/>
+					<path d="m 58.4306,78.8525 -12.2528,17.316 29.5698,-5.064 z" 	fill="hsla(195,100%,11.118764785945896%,1)"/>
+					<path d="m 58.4306,78.8525 17.317,12.252 7.324,-16.472 z" 		fill="hsla(195,100%,9.667509096214227%,1)"/>
+					<path d="m 83.0716,74.6325 -7.324,16.472 17.181,-18.16 z" 		fill="hsla(195,100%,2.8979706930337192%,1)"/>
+				</svg>
+			</a>
+		</div>
+-->		
+		<div id="unitcontrol">
+			<div style="margin: 10px;">
+				<div style="margin: auto; max-width: 700px;">
+				Callsign: <input id="unitname" type="text"><br>
+					<div id="leader" class="unitselection">
+						<span class="unit active" style="padding-top:11px;" id="leader-00" onClick="app.ui.unitselection('leader','00')">
+								<script>document.write(new MS.symbol("10031200000000000000", {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML);</script>
+						</span><span class="unit" id="leader-72" onClick="app.ui.unitselection('leader','72')">  
+								<script>document.write(new MS.symbol("10031200720000000000", {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML);</script>
+						</span><span class="unit" id="leader-71" onClick="app.ui.unitselection('leader','71')">
+								<script>document.write(new MS.symbol("10031200710000000000", {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML);</script>
+						</span>
+
+					</div>
+					<div id="mainicon" class="unitselection">
+					</div>
+					<div id="modifier1" class="unitselection">
+					</div>
+					<div id="modifier2" class="unitselection">				
+					</div>
+					<span id="leader-name">Soldier</span> - <span id="mainicon-name"></span> - <span id="modifier1-name"></span> - <span id="modifier2-name"></span>
+						<span onClick="app.ui.connect()" class="button" style="position: fixed;top: 0px;right:2px;">CONNECT</span>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+
