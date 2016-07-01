@@ -1,7 +1,12 @@
 {
   "name": "tail-blue-force",
   "version": "0.0.1",
-  "description": "forcetracker",
+  "description": "A small blue force tracker based on socket.io, openlayers3 and milsymbol.",
+  "license" : "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/spatialillusions/tail-blue-force.git"
+  },
   "dependencies": {
     "express": "^4.10.2",
     "milsymbol": "^0.5.6",
