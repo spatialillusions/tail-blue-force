@@ -210,7 +210,6 @@ app.ol = {
 		});
 		
 		var element = document.getElementById('button-compass');
-		console.log(element)
 		if(element){
 			this.map.getView().on('change:rotation',function(e){
 				var rotation = app.ol.map.getView().getRotation();
@@ -320,6 +319,8 @@ app.ui = {
 			document.getElementById('unitcontrol').addEventListener("transitionend", function(){
 				document.getElementById('unitcontrol').style.display = (document.getElementById('unitcontrol').style.display != 'block')?'none':'block';
 			}, false);
+		}else{
+			document.getElementById('unitname').style.borderColor = 'rgba(255,100,100,1)';
 		}
 	},
 	init : function(){
