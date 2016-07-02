@@ -248,12 +248,16 @@ app.ui = {
 			var mainicon = document.getElementById('mainicon').getElementsByClassName('active').item(0).id.split('-')[1];
 			var modifier1 = document.getElementById('modifier1').getElementsByClassName('active').item(0).id.split('-')[1];
 			var modifier2 = document.getElementById('modifier2').getElementsByClassName('active').item(0).id.split('-')[1];
-		
-			document.getElementById('unitcontrol').classList.add('inactive');
-			document.getElementById('unitcontrol').addEventListener("transitionend", function(){
-				document.getElementById('unitcontrol').style.display = (document.getElementById('unitcontrol').style.display != 'block')?'none':'block';
-			}, false);
+	
+			if(mainicon.charAt(3) == 3 || mainicon.charAt(3) == 4){
+				var weaponmodifier = 0;
+				if(modifier1 != '00' && modifier2 != '00')weaponmodifier = 1;
+				if(modifier1 == '00' && modifier2 != '00')weaponmodifier = 2;
+				if(modifier1 != '00' && modifier2 == '00')weaponmodifier = 3;
+				if(weaponmodifier)mainicon = (parseInt(mainicon)+weaponmodifier).toString();
+			}
 			
+			var SIDC = '10031200'+leader+mainicon+modifier1+modifier2;
 			
 			app.thisUnit = new ol.Feature({
 				geometry: new ol.geom.Point([Math.random()*10000000, Math.random()*5000000]),
@@ -282,8 +286,13 @@ app.ui = {
 			app.socket.k012({
 				urn : app.thisUrn,
 				unitshortname : unitname,
-				SIDC : '10031200'+leader+mainicon+modifier1+modifier2
+				SIDC : SIDC
 			});
+			
+			document.getElementById('unitcontrol').classList.add('inactive');
+			document.getElementById('unitcontrol').addEventListener("transitionend", function(){
+				document.getElementById('unitcontrol').style.display = (document.getElementById('unitcontrol').style.display != 'block')?'none':'block';
+			}, false);
 		}
 	},
 	init : function(){
