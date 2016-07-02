@@ -109,9 +109,13 @@
 		stroke-width:2px;
 		stroke:rgba(220,220,220,1);
 		transition: fill 0.3s ease-in-out;
+		transition: stroke 0.3s ease-in-out;
 	}
 	#button-compass.centerOnUnit{
 		fill: rgba(220,220,220,0.6);
+	}
+	#button-compass.dynamicPosition{
+		fill: rgba(0,168,220,0.6);
 	}
 	
 	#classification{
@@ -245,6 +249,8 @@ app.ol = {
 			element.classList.add('centerOnUnit');
 		}else{
 			element.classList.remove('centerOnUnit');
+			element.classList.remove('dynamicPosition');
+			window.removeEventListener('deviceorientation',app.ui.autoCompass);
 		}
 		
 	},
@@ -334,6 +340,17 @@ app.ui = {
 		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
 
 	},
+	autoCompass : function(e) {
+		var compassdir;
+		if(e.webkitCompassHeading) {
+			// Apple works only with this, alpha doesn't work
+			compassdir = -e.webkitCompassHeading;  
+		}else{
+			compassdir = e.alpha;
+		}
+		compassdir -= window.orientation;
+		if(!isNaN(compassdir))app.ol.map.getView().setRotation(compassdir * (Math.PI / 180));
+	},
 	buttonCompass : function(){
 		if(app.ol.map.getView().getRotation() != 0){
 			var rotate = ol.animation.rotate({
@@ -342,9 +359,20 @@ app.ui = {
 			});
 			app.ol.map.beforeRender(rotate);
 			app.ol.map.getView().setRotation(0);
+			document.getElementById('button-compass').classList.remove('dynamicPosition');
+			window.removeEventListener('deviceorientation',this.autoCompass);
 			return;
 		}
-		app.ol.panToUnit(app.thisUnit)
+		
+		if(app.ol.map.getView().getCenter().toString() != app.thisUnit.getGeometry().getFirstCoordinate().toString()){
+			app.ol.panToUnit(app.thisUnit);
+			return;
+		}
+		if (window.DeviceOrientationEvent) {
+			document.getElementById('button-compass').classList.add('dynamicPosition');
+			window.addEventListener('deviceorientation', this.autoCompass, false);
+		}
+		
 	},
 	connect : function(){
 		var unitname = document.getElementById('unitname').value;
@@ -435,7 +463,7 @@ window.onload=function(){
 					<path d="M17.5,1.836L28.013,28.208L17.5,23.316L6.987,28.208L17.5,1.836Z"/>
 				</svg>
 			</span></div>
-			<div class="button"><span class="content">BTN</span></div>
+			<div class="button"><span class="content" id="debug">BTN</span></div>
 			<div class="button"><span class="content">BTN</span></div>
 			<div class="button"><span class="content">BTN</span></div>
 			<div class="button"><span class="content">BTN</span></div>
