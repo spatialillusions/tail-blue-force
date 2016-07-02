@@ -180,6 +180,13 @@ app.ol = {
 				new ol.layer.Tile({
 					source: new ol.source.XYZ({
 						tileSize: [512, 512],
+						/* ===============================================================
+						
+						This is my mapbox access token, please change it to your own or 
+						change to another map provider like OSM. I'm just putting it here
+						to make things easy for me and make a nice default map.
+						
+						=============================================================== */
 						url: 'https://api.mapbox.com/styles/v1/mapbox/light-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoic3BhdGlhbGlsbHVzaW9uIiwiYSI6ImNpZ3dhcDdzODAwN2tybGx5YzhlMHd4MTEifQ.5ampQHL0hfBPGyfyIqkvrg'
 					})
 				}),
