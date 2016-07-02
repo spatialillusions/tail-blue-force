@@ -451,7 +451,7 @@ window.onload=function(){
 -->		
 		<div id="unitcontrol">
 			<div style="margin: 10px;">
-				<div style="margin: auto; max-width: 700px;">
+				<div style="margin: auto; max-width: 700px; position:relative;">
 				Callsign: <input id="unitname" type="text"><br>
 					<div id="leader" class="unitselection">
 						<span class="unit active" style="padding-top:11px;" id="leader-00" onClick="app.ui.unitselection('leader','00')">
@@ -470,7 +470,7 @@ window.onload=function(){
 					<div id="modifier2" class="unitselection">				
 					</div>
 					<span id="leader-name">Soldier</span> - <span id="mainicon-name"></span> - <span id="modifier1-name"></span> - <span id="modifier2-name"></span>
-						<span onClick="app.ui.connect()" class="button" style="position: fixed;top: 0px;right:2px;"><span class="content">CONNECT</span></span>
+					<span onClick="app.ui.connect()" class="button" style="position: absolute;top: -5px;right:-5px;"><span class="content">CONNECT</span></span>
 				</div>
 			</div>
 		</div>
