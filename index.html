@@ -105,8 +105,15 @@
 	}
 	
 	#button-compass{
-		/*transition: all 0.25s ease;*/
+		fill:rgba(220,220,220,0);
+		stroke-width:2px;
+		stroke:rgba(220,220,220,1);
+		transition: fill 0.3s ease-in-out;
 	}
+	#button-compass.centerOnUnit{
+		fill: rgba(220,220,220,0.6);
+	}
+	
 	#classification{
 		font-size: 15px;
 		position: fixed;
@@ -209,6 +216,8 @@ app.ol = {
 			})
 		});
 		
+		this.map.getView().on('change:center',this.changeCenter, this);
+		
 		var element = document.getElementById('button-compass');
 		if(element){
 			this.map.getView().on('change:rotation',function(e){
@@ -230,6 +239,15 @@ app.ol = {
 		}
 		return feature;
 	},
+	changeCenter : function(e){
+		var element = document.getElementById('button-compass');
+		if(this.map.getView().getCenter().toString() == app.thisUnit.getGeometry().getFirstCoordinate().toString()){
+			element.classList.add('centerOnUnit');
+		}else{
+			element.classList.remove('centerOnUnit');
+		}
+		
+	},
 	modifyend : function (feature){
 		app.socket.k051({
 			urn:feature.getId(),
@@ -242,6 +260,14 @@ app.ol = {
 			elevation:0,
 			time:0
 		});
+	},
+	panToUnit : function(feature){
+		var pan = ol.animation.pan({
+			duration: 300,
+			source: (this.map.getView().getCenter())
+		});
+		this.map.beforeRender(pan);
+		this.map.getView().setCenter(feature.getGeometry().getFirstCoordinate());
 	},
 	setStyle : function(feature){
 		var ratio = window.devicePixelRatio || 1;
@@ -267,6 +293,59 @@ app.ol = {
 	}
 };
 app.ui = {
+	init : function(){
+		var type,element,content,key;
+	
+		type = 'mainicon'
+		element = document.getElementById(type);
+		content = '';
+		for (key in this.symbols[type]){
+			var sym = new MS.symbol("1003120000" + key, {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+key+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + key + '\')">' + sym + '</span>';
+		}
+		element.innerHTML += content;
+		element.firstElementChild.classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
+
+		type = 'modifier1'
+		element = document.getElementById(type);
+		content = '';
+		key = 0;
+		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
+			var sym = new MS.symbol("1003120000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
+			key++;
+		}
+		element.innerHTML += content;
+		element.firstElementChild.classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
+
+		type = 'modifier2'
+		element = document.getElementById(type);
+		content = '';
+		key = 0;
+		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
+			var sym = new MS.symbol("100312000000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
+			key++;
+		}
+		element.innerHTML += content;
+		element.firstElementChild.classList.add('active');
+		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
+
+	},
+	buttonCompass : function(){
+		if(app.ol.map.getView().getRotation() != 0){
+			var rotate = ol.animation.rotate({
+				duration: 300,
+				rotation: (app.ol.map.getView().getRotation())
+			});
+			app.ol.map.beforeRender(rotate);
+			app.ol.map.getView().setRotation(0);
+			return;
+		}
+		app.ol.panToUnit(app.thisUnit)
+	},
 	connect : function(){
 		var unitname = document.getElementById('unitname').value;
 		if(unitname){
@@ -315,6 +394,8 @@ app.ui = {
 				SIDC : SIDC
 			});
 			
+			app.ol.panToUnit(app.thisUnit)
+			
 			document.getElementById('unitcontrol').classList.add('inactive');
 			document.getElementById('unitcontrol').addEventListener("transitionend", function(){
 				document.getElementById('unitcontrol').style.display = (document.getElementById('unitcontrol').style.display != 'block')?'none':'block';
@@ -323,48 +404,7 @@ app.ui = {
 			document.getElementById('unitname').style.borderColor = 'rgba(255,100,100,1)';
 		}
 	},
-	init : function(){
-		var type,element,content,key;
-		
-		type = 'mainicon'
-		element = document.getElementById(type);
-		content = '';
-		for (key in this.symbols[type]){
-			var sym = new MS.symbol("1003120000" + key, {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
-			content += '<span class="unit" id="'+type+'-'+key+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + key + '\')">' + sym + '</span>';
-		}
-		element.innerHTML += content;
-		element.firstElementChild.classList.add('active');
-		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
-
-		type = 'modifier1'
-		element = document.getElementById(type);
-		content = '';
-		key = 0;
-		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
-			var sym = new MS.symbol("1003120000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
-			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
-			key++;
-		}
-		element.innerHTML += content;
-		element.firstElementChild.classList.add('active');
-		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
-
-		type = 'modifier2'
-		element = document.getElementById(type);
-		content = '';
-		key = 0;
-		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
-			var sym = new MS.symbol("100312000000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
-			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
-			key++;
-		}
-		element.innerHTML += content;
-		element.firstElementChild.classList.add('active');
-		document.getElementById(type+'-name').innerHTML = this.symbols[type][element.firstElementChild.id.split('-')[1]];
-
-	},
-	daynight : function(){},
+	dayNight : function(){},
 	symbols : {
 		leader : {'00':'Soldier','71':'Leader','72':'Deputy Leader'},
 		mainicon : {'110101':'Infantry','110102':'Medical','110103':'Reconnaissance','110104 ':'Signal','110201':'Explosive Ordnance Disposal','110202':'Field Artillery Observer','110203':'Joint Fire Support','110204':'Liaison','110205':'Messenger','110206':'Military Police','110207':'Observer','110208':'Security','110209':'Sniper','110210':'Special Operation Forces','110301':'Rifle','110305':'Single Shot Rifle','110309':'Semiautomatic Rifle','110313':'Automatic Rifle','110317':'Machine Gun','110321':'Light Machine Gun','110325':'Medium Machine Gun','110329':'Heavy Machine Gun','110333':'Grenade Launcher','110337':'Light Grenade Launcher','110341':'Medium Grenade Launcher','110345':'Heavy Grenade Launcher','110349':'Flame Thrower','110353':'Mortar','110357':'Single Rocket Launcher','110361':'Antitank Rocket Launcher','110401':'Non-Lethal Weapon','110405':'Non-Lethal Grenade Launcher','110409':'Taser'},
@@ -390,9 +430,9 @@ window.onload=function(){
 		<div id="map"></div>
 		<div id="classification">UNCLASSIFIED</div>
 		<div id="right-buttons">
-			<div class="button"><span class="content" id="button-compass" style="will-change: transform; transform: rotate(0rad);">
+			<div class="button" onClick="app.ui.buttonCompass()"><span class="content" id="button-compass" style="will-change: transform; transform: rotate(0rad);">
 				<svg width="35" height="35" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.41421;">
-					<path d="M17.5,1.836L28.013,28.208L17.5,23.316L6.987,28.208L17.5,1.836Z" style="fill:none;stroke-width:2px;stroke:rgba(220,220,220,1);"/>
+					<path d="M17.5,1.836L28.013,28.208L17.5,23.316L6.987,28.208L17.5,1.836Z"/>
 				</svg>
 			</span></div>
 			<div class="button"><span class="content">BTN</span></div>
