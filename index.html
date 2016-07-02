@@ -230,7 +230,7 @@ app.ol = {
 			feature.getProperties().SIDC, {
 				colorMode: feature==app.thisUnit?MS.getColorMode("Medium"):MS.getColorMode("Light"),
 				size:40*ratio,
-				uniqueDesignation: feature.getProperties().unitshortname
+				uniqueDesignation: feature.getProperties().unitshortname.toString()
 			});
 		feature.milsymbol = symbol;
 	
