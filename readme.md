@@ -1,5 +1,7 @@
 #Tail Blue Force
 
+*A tail is something that always follows you around.*
+
 Tail is a minimal blue force tracker to show what a real world usecase of milsymbol could be. It is still in very early development.
 
 Tail uses socket.io for the backend of the server for handling messages, and openlayers 3 for the frontend to display where the current connected units are located.
@@ -7,9 +9,11 @@ Tail uses socket.io for the backend of the server for handling messages, and ope
 The message format used in Tail is based on open information of the VMF messages described in MIL-STD-2016, but since the standard is limited distribution the message format has only implemented what is available in open sources.
 
 ## Roadmap
-- Actually convert the messages to/from binary code in the client.
-- Move to https and use the connected users real position if available.
-- Make the buttons in the client do stuff. ;-)
+- Actually convert the messages to/from binary code in the client
+- Move to https
+- Use the connected users real position if available (requires https)
+- Make the buttons in the client do more stuff
+- Better reconnect functionality if connection is lost
 
 ## Live demo
 At the moment there is a live demo at:
