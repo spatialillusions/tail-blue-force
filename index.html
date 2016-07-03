@@ -300,14 +300,16 @@ app.ol = {
 };
 app.ui = {
 	init : function(){
-		var type,element,content,key;
+		var type,element,content,key,keys;
 	
 		type = 'mainicon'
 		element = document.getElementById(type);
 		content = '';
-		for (key in this.symbols[type]){
-			var sym = new MS.symbol("1003120000" + key, {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
-			content += '<span class="unit" id="'+type+'-'+key+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + key + '\')">' + sym + '</span>';
+		keys = Object.keys(this.symbols[type]).sort();
+		console.log(keys)
+		for (key in keys){
+			var sym = new MS.symbol("1003120000" + keys[key], {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+keys[key]+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + keys[key] + '\')">' + sym + '</span>';
 		}
 		element.innerHTML += content;
 		element.firstElementChild.classList.add('active');
@@ -316,11 +318,10 @@ app.ui = {
 		type = 'modifier1'
 		element = document.getElementById(type);
 		content = '';
-		key = 0;
-		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
-			var sym = new MS.symbol("1003120000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
-			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
-			key++;
+		keys = Object.keys(this.symbols[type]).sort();
+		for (key in keys){
+			var sym = new MS.symbol("1003120000000000" + keys[key], {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+keys[key]+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + keys[key] + '\')">' + sym + '</span>';
 		}
 		element.innerHTML += content;
 		element.firstElementChild.classList.add('active');
@@ -329,11 +330,10 @@ app.ui = {
 		type = 'modifier2'
 		element = document.getElementById(type);
 		content = '';
-		key = 0;
-		while (this.symbols[type].hasOwnProperty((key<10)?'0'+key:key)){
-			var sym = new MS.symbol("100312000000000000" + ((key<10)?'0'+key:key), {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
-			content += '<span class="unit" id="'+type+'-'+((key<10)?'0'+key:key)+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + ((key<10)?'0'+key:key) + '\')">' + sym + '</span>';
-			key++;
+		keys = Object.keys(this.symbols[type]).sort();
+		for (key in keys){
+			var sym = new MS.symbol("100312000000000000" + keys[key], {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
+			content += '<span class="unit" id="'+type+'-'+keys[key]+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + keys[key] + '\')">' + sym + '</span>';
 		}
 		element.innerHTML += content;
 		element.firstElementChild.classList.add('active');
