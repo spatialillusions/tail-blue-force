@@ -8,7 +8,7 @@
     "url": "git://github.com/spatialillusions/tail-blue-force.git"
   },
   "dependencies": {
-    "express": "4.14.0",
+    "express": "^4.14.0",
     "milsymbol": "^0.5.6",
     "openlayers": "^3.16.0",
     "socket.io": "^1.4.8"
