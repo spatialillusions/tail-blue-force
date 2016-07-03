@@ -265,6 +265,7 @@ app.ol = {
 			elevation:0,
 			time:0
 		});
+		this.changeCenter();
 	},
 	panToUnit : function(feature){
 		var pan = ol.animation.pan({
@@ -348,6 +349,8 @@ app.ui = {
 			compassdir = e.alpha;
 		}
 		compassdir -= window.orientation;
+		if(compassdir > 180){compassdir = -(360 - compassdir)}
+		if(compassdir < -180){compassdir = (360 + compassdir)}
 		if(!isNaN(compassdir))app.ol.map.getView().setRotation(compassdir * (Math.PI / 180));
 	},
 	buttonCompass : function(){
