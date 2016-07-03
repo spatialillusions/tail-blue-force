@@ -4,7 +4,6 @@
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<title>Tail Blue Force - Spatial Illusions</title>
 		<link rel="stylesheet" type="text/css" href="openlayers/ol.css">
-		<script type='text/javascript' src="openlayers/ol.js"></script>
 		<script type='text/javascript' src="socket/socket.io.js"></script>
 		<!-- TODO change this when milsymbol is released -->
 		<script type='text/javascript' src="http://spatialillusions.com/milsymbol/dist/milsymbol.js"></script>
@@ -19,6 +18,7 @@
 		width: 100%;
 		height: 100%;
 		font-family: arial, sans-serif;
+		font-size: 1rem;
 	}
     #unitcontrol {
     	position: fixed;
@@ -42,7 +42,8 @@
 		
 		color: rgba(255,255, 255,0.8);
 		font-size: 20px;
-
+		font-size: 1rem;
+		
 		border-color: rgba(220,220,220,1);
 		border-radius: 5px;
 		border-style: solid;
@@ -86,24 +87,20 @@
 		right:2px;
 	}
 	.button{
-		display: table;
-		min-width: 35px;
-		min-height: 35px;
+		min-width: 60px;
+		min-height: 60px;
 		margin-top: 5px;
 		margin-right: 5px;
 		padding: 10px;
 		text-align: center;
-
+		font-size: 1rem;
+		
 		border: 2px solid;
 		border-radius: 10px;
 		border-color:  rgba(220,220,220,1);
 		background-color: rgba(0,0, 0,0.7);
 		color: rgba(255,255, 255,0.8);
 		box-shadow: 0px 0px 10px rgba(0,0,0,0.50);
-	}
-	.button .content{
-		display: table-cell;
-  		vertical-align: middle;
 	}
 	
 	#button-compass{
@@ -460,15 +457,17 @@ window.onload=function(){
 		<div id="map"></div>
 		<div id="classification">UNCLASSIFIED</div>
 		<div id="right-buttons">
-			<div class="button" onClick="app.ui.buttonCompass()"><span class="content" id="button-compass" style="will-change: transform; transform: rotate(0rad);">
-				<svg width="35" height="35" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.41421;">
-					<path d="M17.5,1.836L28.013,28.208L17.5,23.316L6.987,28.208L17.5,1.836Z"/>
-				</svg>
-			</span></div>
-			<div class="button"><span class="content" id="debug">BTN</span></div>
-			<div class="button"><span class="content">BTN</span></div>
-			<div class="button"><span class="content">BTN</span></div>
-			<div class="button"><span class="content">BTN</span></div>
+			<button class="button" onClick="app.ui.buttonCompass()">
+				<div id="button-compass" style="will-change: transform; transform: rotate(0rad);">
+					<svg width="35" height="35" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.41421;">
+						<path d="M17.5,1.836L28.013,28.208L17.5,23.316L6.987,28.208L17.5,1.836Z"/>
+					</svg>
+				</div>
+			</button><br>
+			<button class="button" id="debug">BTN</button><br>
+			<button class="button" >BTN</button><br>
+			<button class="button" >BTN</button><br>
+			<button class="button" >BTN</button><br>
 		</div>
 <!--		
 		<div id="logo">
@@ -540,10 +539,11 @@ window.onload=function(){
 					<div id="modifier2" class="unitselection">				
 					</div>
 					<span id="leader-name">Soldier</span> - <span id="mainicon-name"></span> - <span id="modifier1-name"></span> - <span id="modifier2-name"></span>
-					<span onClick="app.ui.connect()" class="button" style="position: absolute;top: -5px;right:-5px;"><span class="content">CONNECT</span></span>
+					<button onClick="app.ui.connect()" class="button" style="position: absolute;top: -5px;right:-5px;">CONNECT</button>
 				</div>
 			</div>
 		</div>
 	</body>
+		<script type='text/javascript' src="openlayers/ol-debug.js"></script> <!-- this must be loaded after the body tag in 3.17... -->
 </html>
 
