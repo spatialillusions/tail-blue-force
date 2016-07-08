@@ -17,7 +17,7 @@ The message format used in Tail is based on open information of the VMF messages
 
 ## Live demo
 At the moment there is a live demo at:
-http://tail.spatialillusions.com:8080
+https://tail.spatialillusions.com:4433
 
 The port/server/other stuff might change at any time, so it's guaranteed that the demo will work. If you want to see how the information is pushed to the clients the recommendation is to open several windows and sign in with them.
 
