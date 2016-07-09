@@ -157,6 +157,9 @@ app.socket = {
 					unitshortname : app.thisUnit.getProperties().unitshortname,
 					SIDC : app.thisUnit.getProperties().SIDC
 				});
+				app.thisUnit.setId(app.thisUrn);
+				//this will trigger a positions message
+				app.ol.modifyend(app.thisUnit);
 			}
 		});
 		socket.on('K01.2', function(msg){
@@ -499,7 +502,7 @@ app.ui = {
 				app.ol.modifyend(e.features.getArray()[0]);
 			});		
 			app.ol.map.addInteraction(modify);
-			//this will trigger the first posions message
+			//this will trigger the first positions message
 			app.ol.modifyend(app.thisUnit);
 
 			app.socket.k012({
