@@ -4,11 +4,11 @@
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<title>Tail Blue Force - Spatial Illusions</title>
 		<link rel="stylesheet" type="text/css" href="openlayers/ol.css">
-		<script type='text/javascript' src="openlayers/ol-debug.js"></script>
+		<script type='text/javascript' src="openlayers/ol.js"></script>
 		<script type='text/javascript' src="socket/socket.io.js"></script>
 		<!-- TODO change this when milsymbol is released -->
-		<script type='text/javascript' src="http://spatialillusions.com/milsymbol/dist/milsymbol.js"></script>
-		<!--<script type='text/javascript' src="milsymbol/milsymbol.js"></script>-->
+		<!--<script type='text/javascript' src="http://spatialillusions.com/milsymbol/dist/milsymbol.js"></script>-->
+		<script type='text/javascript' src="milsymbol/milsymbol.js"></script>
 
 		
 <style type='text/css'>
@@ -128,6 +128,16 @@
     	text-shadow: 0px 0px 10px rgba(0,0,0,0.50);
     	pointer-events: none;
 	}
+	#position_update{
+		font-size: 15px;
+		position: fixed;
+		bottom: 0px;
+		left:2px;
+    	color: rgba(255,255, 255,0.8);
+    	padding: 5px;
+    	text-shadow: 0px 0px 10px rgba(0,0,0,0.50);
+    	pointer-events: none;
+	}
 </style>
 
 <script type='text/javascript'>
@@ -138,7 +148,16 @@ app.socket = {
 	init : function(){
 		socket = io();
 		socket.on('connected', function(urn){
-			app.thisUrn = urn;
+			if(!app.thisUrn){
+				app.thisUrn = urn;
+			}else{
+				app.thisUrn = urn;
+				app.socket.k012({
+					urn : app.thisUrn,
+					unitshortname : app.thisUnit.getProperties().unitshortname,
+					SIDC : app.thisUnit.getProperties().SIDC
+				});
+			}
 		});
 		socket.on('K01.2', function(msg){
 			if(!app.units[msg.urn])app.units[msg.urn] = {};
@@ -230,6 +249,7 @@ app.ol = {
 				document.getElementById('button-compass').style.transform = ('rotate('+rotation+'rad)');
 			})
 		}
+
 	},
 	addnewfeature : function(msg){
 		var feature = new ol.Feature({
@@ -254,6 +274,28 @@ app.ol = {
 		}
 		
 	},
+	geolocation : function(){// TODO REMOVE
+		if (navigator.geolocation) {
+			navigator.geolocation.watchPosition(this.positionupdate);
+		}
+	},
+	geolocationError : function (error) {
+		var element = document.getElementById('position_update');
+		switch(error.code) {
+			case error.PERMISSION_DENIED:
+				element.innerHTML = "User denied the request for Geolocation.";
+				break;
+			case error.POSITION_UNAVAILABLE:
+				element.innerHTML = "Location information is unavailable.";
+				break;
+			case error.TIMEOUT:
+				element.innerHTML = "The request to get user location timed out.";
+				break;
+			case error.UNKNOWN_ERROR:
+				element.innerHTML = "An unknown error occurred.";
+				break;
+		}
+	},
 	modifyend : function (feature){
 		app.socket.k051({
 			urn:feature.getId(),
@@ -275,6 +317,29 @@ app.ol = {
 		});
 		this.map.beforeRender(pan);
 		this.map.getView().setCenter(feature.getGeometry().getFirstCoordinate());
+	},
+	positionupdate : function(position){
+		if(app.thisUnit && position){
+			var element = document.getElementById('position_update');
+			element.innerHTML = "Using real position.<br>";
+			if(position.coords.accuracy != 'undefined'){
+				element.innerHTML += "Accuracy: " + parseInt(position.coords.accuracy) + "m";
+			}else{
+				element.innerHTML += "Accuracy: Unknown";
+			}
+			if( app.thisUnit.getGeometry().getFirstCoordinate().toString() != ol.proj.fromLonLat([position.coords.longitude,position.coords.latitude]).toString()){
+				app.thisUnit.setGeometry(
+					new ol.geom.Point(
+						ol.proj.fromLonLat([position.coords.longitude,position.coords.latitude])
+					)
+				);
+				if(document.getElementById('button-compass').classList.contains('centerOnUnit')){
+					app.ol.panToUnit(app.thisUnit);
+				}
+				//this will trigger the position update message
+				app.ol.modifyend(app.thisUnit);
+			}			
+		}
 	},
 	setStyle : function(feature){
 		var ratio = window.devicePixelRatio || 1;
@@ -307,7 +372,6 @@ app.ui = {
 		element = document.getElementById(type);
 		content = '';
 		keys = Object.keys(this.symbols[type]).sort();
-		console.log(keys)
 		for (key in keys){
 			var sym = new MS.symbol("1003120000" + keys[key], {colorMode:MS.getColorMode("Medium"),size:40}).getMarker().XML;
 			content += '<span class="unit" id="'+type+'-'+keys[key]+'" onClick="app.ui.unitselection(\'' + type + '\',\'' + keys[key] + '\')">' + sym + '</span>';
@@ -374,6 +438,10 @@ app.ui = {
 		if (window.DeviceOrientationEvent) {
 			document.getElementById('button-compass').classList.add('dynamicPosition');
 			window.addEventListener('deviceorientation', this.autoCompass, false);
+			/*if (navigator.geolocation) {
+				navigator.geolocation.clearWatch(app.watchPosition)
+				app.watchPosition = navigator.geolocation.watchPosition(app.ol.positionupdate);
+			}*/
 		}
 		
 	},
@@ -396,8 +464,22 @@ app.ui = {
 			var SIDC = '10031200'+leader+mainicon+modifier1+modifier2;
 			
 			app.thisUnit = new ol.Feature({
-				geometry: new ol.geom.Point([Math.random()*10000000, Math.random()*5000000]),
-			});	
+				geometry: new ol.geom.Point(ol.proj.fromLonLat([0,0])),
+			});
+			
+			var element = document.getElementById('position_update');
+			if (navigator.geolocation) {
+			
+				app.geolocationOptions = {
+					enableHighAccuracy: true, 
+					maximumAge        : 30000, 
+					timeout           : 20000
+				};
+				app.watchPosition = navigator.geolocation.watchPosition(app.ol.positionupdate, app.ol.geolocationError,app.geolocationOptions);
+			}else{
+				element.innerHTML = 'Manual position mode.';
+			}
+			
 			app.ol.vectorSource.addFeature(app.thisUnit);
 			app.thisUnit.setId(app.thisUrn);
 			
@@ -417,6 +499,7 @@ app.ui = {
 				app.ol.modifyend(e.features.getArray()[0]);
 			});		
 			app.ol.map.addInteraction(modify);
+			//this will trigger the first posions message
 			app.ol.modifyend(app.thisUnit);
 
 			app.socket.k012({
@@ -450,7 +533,7 @@ app.ui = {
 };
 
 window.onload=function(){
-	app.socket.init(); //This sets up the socket functionallity
+	app.socket.init(); //This sets up the socket functionality
 	app.ui.init(); 	// This will initiate the connect ui with symbols
 	app.ol.init(); // This will initiate the map
 }
@@ -460,6 +543,7 @@ window.onload=function(){
 	<body>
 		<div id="map"></div>
 		<div id="classification">UNCLASSIFIED</div>
+		<div id="position_update">Trying to get your position...</div>
 		<div id="right-buttons">
 			<button class="button" onClick="app.ui.buttonCompass()">
 				<div id="button-compass" style="will-change: transform; transform: rotate(0rad);">
