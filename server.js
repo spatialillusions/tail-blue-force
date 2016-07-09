@@ -1,11 +1,25 @@
 "use strict";
-
 var express = require('express');
 var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var fs = require('fs'); 
+
+// Use HTTP ------------------------------------------------------------------------------
+//var port = 8080;
+//var server = require('http').Server(options,app);
+
+// Use HTTPS -----------------------------------------------------------------------------
+var port = 4433;
+var options = {
+  key: fs.readFileSync(__dirname + '/tail.spatialillusions.com.ssl/tail.spatialillusions.com.key'), //Path to your key
+  cert: fs.readFileSync(__dirname + '/tail.spatialillusions.com.ssl/tail_spatialillusions_com.crt') //Path to your certificate
+};
+var server = require('https').Server(options,app);
+
+// Initiate Socket -----------------------------------------------------------------------
+var io = require('socket.io')(server);
 var connected = {}; // this will contain information about all connected units
 
+// Setting up where to find files --------------------------------------------------------
 app.get('/', function(req, res){
 	res.sendFile('index.html', { root: __dirname });
 });
@@ -13,6 +27,7 @@ app.use('/milsymbol', express.static(__dirname + '/node_modules/milsymbol/dist/'
 app.use('/openlayers', express.static(__dirname + '/node_modules/openlayers/dist'));
 app.use('/socket', express.static(__dirname + '/node_modules/socket.io-client'));
 
+// Socket handling -----------------------------------------------------------------------
 io.on('connection', function(socket){
 	var urn = parseInt(Math.random()*1000000);
 	while(connected[urn]){ // making sure that the urn is not already connected
@@ -43,7 +58,7 @@ io.on('connection', function(socket){
   	});
 });
 
-var port = 8080;
-http.listen(port, function(){
+// Now lets start the server -------------------------------------------------------------
+server.listen(port, function(){
 	console.log('listening on *:'+port);
 });
