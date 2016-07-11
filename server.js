@@ -8,12 +8,18 @@ var fs = require('fs');
 //var server = require('http').Server(options,app);
 
 // Use HTTPS -----------------------------------------------------------------------------
-var port = 4433;
+var port = 443;
 var options = {
   key: fs.readFileSync(__dirname + '/tail.spatialillusions.com.ssl/tail.spatialillusions.com.key'), //Path to your key
   cert: fs.readFileSync(__dirname + '/tail.spatialillusions.com.ssl/tail_spatialillusions_com.crt') //Path to your certificate
 };
 var server = require('https').Server(options,app);
+// Redirect from http port 80 to https
+var http = require('http');
+http.createServer(function (req, res) {
+    res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+    res.end();
+}).listen(80);
 
 // Initiate Socket -----------------------------------------------------------------------
 var io = require('socket.io')(server);
