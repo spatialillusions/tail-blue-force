@@ -142,6 +142,32 @@
 
 <script type='text/javascript'>
 var socket;
+/*var vmf = {
+	binarypad : function(binary, length){
+		return Array(length - binary.length + 1).join(0) + binary;
+	},
+	encode : function(msgtype,msg){
+		var msgformat = this.messages[msgtype];
+		for(var i = 0; i < msgformat.length; i++){
+			
+		
+		}
+	},
+	decode : function(msgtype,msg){
+		var msgformat = this.messages[msgtype];
+		
+	
+	},
+	messages : {
+		'K01.2':[
+			{fpi:false,field:'urn',length:24},
+			{fpi:false,field:'unitshortname',length:(64*7)},
+			{fpi:false,field:'SIDC',length:(15*7)}],
+		'K05.1':[]	
+	}
+};
+*/
+
 var app = {};
 app.units = {};
 app.socket = {
@@ -158,6 +184,11 @@ app.socket = {
 					SIDC : app.thisUnit.getProperties().SIDC
 				});
 				app.thisUnit.setId(app.thisUrn);
+				
+				//Restart the location watch
+				navigator.geolocation.clearWatch(app.watchPosition)
+				app.watchPosition = navigator.geolocation.watchPosition(app.ol.positionupdate, app.ol.geolocationError,app.geolocationOptions);
+
 				//this will trigger a positions message
 				app.ol.modifyend(app.thisUnit);
 			}
