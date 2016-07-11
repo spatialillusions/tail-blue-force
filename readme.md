@@ -17,11 +17,23 @@ The message format used in Tail is based on open information of the VMF messages
 
 ## Live demo
 At the moment there is a live demo at:
-https://tail.spatialillusions.com:4433
+https://tail.spatialillusions.com
 
 The port/server/other stuff might change at any time, so it's guaranteed that the demo will work. If you want to see how the information is pushed to the clients the recommendation is to open several windows and sign in with them.
 
 No information about positions are stored on the server, once you disconnect all your connection information will be removed from the in memory dataset. (Logging can however be added quite easy.)
+
+## Getting started with tail
+
+- Download the source code, no npm yet.
+- Run `npm install` in the directory where you have the source
+- Patch the milsymbol library with the latest dist file from GitHub (we are using functionality not yet released)
+- Add your own Mapbox accesstoken in index.html
+- Update server.js with paths to your own ssl certificates
+- Change portnumbers, or run `sudo setcap 'cap_net_bind_service=+ep' /usr/bin/nodejs` to allow node to run on ports lower than 1024
+- Run `node server.js` to start tail.
+- You should now be able to browse to your server and get the tail client as a response.
+
 
 ## Contact
 Please use contact details found on http://www.spatialillusions.com if you want to get in contact with me.
