@@ -8,6 +8,14 @@ Tail uses socket.io for the backend of the server for handling messages, and ope
 
 The message format used in Tail is based on open information of the VMF messages described in MIL-STD-2016, but since the standard is limited distribution the message format has only implemented what is available in open sources.
 
+Login screen
+
+![Figure 13](docs/images/login.jpg?raw=true)
+
+Main interface with live compass
+
+![Figure 13](docs/images/ui01.jpg?raw=true)
+
 ## Roadmap
 - Actually convert the messages to/from binary code in the client
 - Move to https
