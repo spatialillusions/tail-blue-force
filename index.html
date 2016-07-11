@@ -177,6 +177,10 @@ app.socket = {
 			if(!app.thisUrn){
 				app.thisUrn = urn;
 			}else{
+				app.ol.vectorSource.forEachFeature(function(feature){
+					if(feature != app.thisUnit)app.ol.vectorSource.removeFeature(feature);
+				});
+				
 				app.thisUrn = urn;
 				app.socket.k012({
 					urn : app.thisUrn,
