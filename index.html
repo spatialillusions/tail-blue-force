@@ -177,17 +177,17 @@ app.socket = {
 			if(!app.thisUrn){
 				app.thisUrn = urn;
 			}else{
+				app.thisUrn = urn;
+				app.thisUnit.setId(app.thisUrn);
 				app.ol.vectorSource.forEachFeature(function(feature){
 					if(feature != app.thisUnit)app.ol.vectorSource.removeFeature(feature);
 				});
-				
-				app.thisUrn = urn;
+
 				app.socket.k012({
 					urn : app.thisUrn,
 					unitshortname : app.thisUnit.getProperties().unitshortname,
 					SIDC : app.thisUnit.getProperties().SIDC
 				});
-				app.thisUnit.setId(app.thisUrn);
 				
 				//Restart the location watch
 				navigator.geolocation.clearWatch(app.watchPosition)
@@ -216,7 +216,7 @@ app.socket = {
 				app.ol.addnewfeature(msg);
 			}
 		});
-		socket.on('disconnected', function(urn){	
+		socket.on('disconnected', function(urn){
 			var feature = app.ol.vectorSource.getFeatureById(urn);
 			if(feature){
 				feature.getStyle().getImage().setOpacity(0.3);
@@ -229,6 +229,7 @@ app.socket = {
 		});
 	},
 	k012 : function (msg){
+		if(app.thisUnit.getId() != app.thisUrn)return; // We have reconnected and should not send invalid information
 		var feature = app.ol.vectorSource.getFeatureById(msg.urn);
 		if(feature){
 			feature.setProperties(msg);
@@ -239,6 +240,7 @@ app.socket = {
 		socket.emit('K01.2', msg);
 	},
 	k051 : function (msg){
+		if(app.thisUnit.getId() != app.thisUrn)return; // We have reconnected and should not send invalid information
 		if(!app.units[msg.urn])app.units[msg.urn] = {};
 		app.units[msg.urn].k051 = msg;
 		socket.emit('K05.1', msg);
