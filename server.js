@@ -4,10 +4,12 @@ var app = express();
 var fs = require('fs'); 
 
 // Use HTTP ------------------------------------------------------------------------------
-//var port = 8080;
-//var server = require('http').Server(options,app);
-
+/*
+var port = 8080;
+var server = require('http').Server(options,app);
+*/
 // Use HTTPS -----------------------------------------------------------------------------
+
 var port = 443;
 var options = {
   key: fs.readFileSync(__dirname + '/tail.spatialillusions.com.ssl/tail.spatialillusions.com.key'), //Path to your key
@@ -34,7 +36,7 @@ app.use('/openlayers', express.static(__dirname + '/node_modules/openlayers/dist
 app.use('/socket', express.static(__dirname + '/node_modules/socket.io-client'));
 
 // Socket handling -----------------------------------------------------------------------
-io.on('connection', function(socket){
+io.on('connect', function(socket){
 	var urn = parseInt(Math.random()*1000000);
 	while(connected[urn]){ // making sure that the urn is not already connected
 		urn = parseInt(Math.random()*1000000);
@@ -49,6 +51,7 @@ io.on('connection', function(socket){
 	//k011 is sort of VMF message type K01.2
 	//k051 is sort of VMF message type K05.1
 
+	//TODO just use one message type with a header telling what message it is
 	socket.on('K01.2', function(msg){ // this is broadcasted to everyone
 		socket.broadcast.emit('K01.2', msg);
 		connected[urn].k012 = msg;
@@ -58,6 +61,7 @@ io.on('connection', function(socket){
 		connected[urn].k051 = msg;
 	});
 	
+	//TODO, send this as a K01.2 with a disconnected property
 	socket.on('disconnect', function () {
 		if(connected[urn].k012 || connected[urn].k051){
 			io.emit('disconnected', urn);

@@ -229,7 +229,6 @@ app.socket = {
 		});
 	},
 	k012 : function (msg){
-		if(app.thisUnit.getId() != app.thisUrn)return; // We have reconnected and should not send invalid information
 		var feature = app.ol.vectorSource.getFeatureById(msg.urn);
 		if(feature){
 			feature.setProperties(msg);
@@ -240,7 +239,6 @@ app.socket = {
 		socket.emit('K01.2', msg);
 	},
 	k051 : function (msg){
-		if(app.thisUnit.getId() != app.thisUrn)return; // We have reconnected and should not send invalid information
 		if(!app.units[msg.urn])app.units[msg.urn] = {};
 		app.units[msg.urn].k051 = msg;
 		socket.emit('K05.1', msg);
