@@ -59,7 +59,9 @@ io.on('connection', function(socket){
 	});
 	
 	socket.on('disconnect', function () {
-		io.emit('disconnected', urn);
+		if(connected[urn].k012 || connected[urn].k051){
+			io.emit('disconnected', urn);
+		}
     	delete connected[urn];
   	});
 });
