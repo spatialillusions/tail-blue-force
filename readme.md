@@ -18,10 +18,10 @@ Main interface with live compass
 
 ## Roadmap
 - Actually convert the messages to/from binary code in the client
-- Move to https
-- Use the connected users real position if available (requires https)
+	- Use MIL-STD-2045-47001D for header information
+	- Use MIL-STD-2016 VMF for message information
+	- Make the backend talk to external TCP streams
 - Make the buttons in the client do more stuff
-- Better reconnect functionality if connection is lost
 
 ## Live demo
 At the moment there is a live demo at:
