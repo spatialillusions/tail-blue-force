@@ -19,7 +19,7 @@ Main interface with live compass
 ## Roadmap
 - Actually convert the messages to/from binary code in the client
 	- Use MIL-STD-2045-47001D for header information
-	- Use MIL-STD-2016 VMF for message information
+	- Use MIL-STD-6017 VMF for message information
 	- Make the backend talk to external TCP streams
 - Make the buttons in the client do more stuff
 
