@@ -24,8 +24,8 @@ Main interface with live compass
 - Make the buttons in the client do more stuff
 
 ## Live demo
-At the moment there is a live demo at:
-https://tail.spatialillusions.com
+~~At the moment there is a live demo at:~~
+~~https://tail.spatialillusions.com~~
 
 The port/server/other stuff might change at any time, so it's guaranteed that the demo will work. If you want to see how the information is pushed to the clients the recommendation is to open several windows and sign in with them.
 
